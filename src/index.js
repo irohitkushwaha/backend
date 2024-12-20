@@ -1,11 +1,13 @@
 import dotenv from "dotenv";
 import DBConnection from "./db/index.js";
-
+import app from "./app.js";
 dotenv.config();
 console.log("importing env", process.env.PORT);
 
 DBConnection()
-.then(()=>{
-    
-})
-.catch(); 
+  .then(() => {
+    app.listen(process.env.PORT || 8000, () => {
+      console.log("Service is running at port", process.env.PORT);
+    });
+  })
+  .catch((error) => console.error("Error during server listening", error));

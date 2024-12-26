@@ -1,5 +1,4 @@
 import mongoose, { Schema } from "mongoose";
-import { Video } from "./video.model";
 import bcrypt from "bcrypt";
 import jsonwebtoken from "jsonwebtoken";
 
@@ -82,4 +81,6 @@ UserSchema.methods.generateRefreshToken = async function () {
   );
 };
 
-export const User = mongoose.model("User", UserSchema);
+ const  User = mongoose.model("User", UserSchema);
+
+ export default User

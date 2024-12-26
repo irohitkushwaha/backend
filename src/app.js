@@ -7,7 +7,7 @@ const app = express();
 app.use(
   cors({
     origin: process.env.CORS_ORIGIN,
-    credentials : true
+    credentials: true,
   })
 );
 
@@ -17,8 +17,12 @@ app.use(
     extended: true,
   })
 );
-app.use(express.static("public"))
+app.use(express.static("public"));
 
 app.use(cookieParser());
+
+import UserRouter from "./Routes/user.router.js";
+app.use("/api/v1/register", UserRouter)
+
 
 export default app;

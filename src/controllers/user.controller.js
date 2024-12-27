@@ -71,5 +71,72 @@ const RegisterUser = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(isUserSaved, 200));
 });
 
-export default RegisterUser;
 
+//Alogithm for Logging the user
+//1. get email/username and password from frontend
+//2. make sure at least one of email or username is available and password, should not be empty
+//3. Check email or username exist by db calling, if not throw error
+//4. Check or Match the password from bcrypt, if not throw error
+
+//5. Generate Access and Refresh Token - Function
+/////5.1  Make a function that will give access and refresh
+/////5.2 It require user id for db call to create instance for generating or calling access and refresh token
+/////5.3 This function will take User id as argument
+
+//6. Get Access token, if not throw error
+//7. get refresh token, if not throw error
+//8. db call findbyidandupdate and put refresh token
+//9. send access and refresh token through cookies, make sure option(Secure, http)
+//10. send json response to client through api response succesfully logged
+
+//Access and Refresh token function
+
+const AccessRefreshTokenGenerator = async (user) => {
+  const AccessToken = await user.generateAccessToken();
+  const RefreshToken = await user.generateRefreshToken();
+  await User.findByIdAndUpdate(
+    user._id,
+    {
+      $set: { RefreshToken: RefreshToken },
+    },
+    { new: true }
+  );
+  return { AccessToken, RefreshToken };
+};
+
+const LoggedInUser = asyncHandler(async (req, res) => {
+  const { UserName, Email, Password } = req.body;
+
+  if (!UserName && !Email) {
+    throw new ApiError(401, "Username or Email is Required!");
+  }
+
+  const user = await User.findOne({
+    $or: [{ UserName},{Email} ],
+  });
+
+  if (!user) {
+    throw new ApiError(400, "Invalid email or username, doesn`t exist");
+  }
+
+  const password = await user.isPasswordCorrect(Password);
+
+  if (!password) {
+    throw new ApiError(400, "Password is incorrect");
+  }
+
+  const AccessRefreshToken = await AccessRefreshTokenGenerator(user);
+  const option = {
+    httpOnly: true,
+    // secure: true,
+  };
+  res
+    .status(200)
+    .cookie("RefreshToken", AccessRefreshToken.RefreshToken, option)
+    .cookie("AccessToken", AccessRefreshToken.AccessToken, option)
+    .json(new ApiResponse({}, 200, "Logged in Successfully"));
+});
+
+
+export default {RegisterUser, 
+LoggedInUser};

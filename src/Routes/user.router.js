@@ -1,6 +1,6 @@
 import { Router } from "express";
 import upload from "../Middlewares/file.middleware.js";
-import { RegisterUser, LoggedInUser, LogoutUser, RefreshingToken, ChangePassword, GetCurrentUser, UpdateUserDetail, ChangeUserAvatar, ChangeUserCoverImage  } from "../controllers/user.controller.js";
+import { RegisterUser, LoggedInUser, LogoutUser, RefreshingToken, ChangePassword, GetCurrentUser, UpdateUserDetail, ChangeUserAvatar, ChangeUserCoverImage, GetUserChannel, GetWatchHistory  } from "../controllers/user.controller.js";
 import VerifyJWT from "../Middlewares/verifyjwt.middleware.js";
 
 const router = Router();
@@ -39,18 +39,26 @@ router.route("/get-user").get(VerifyJWT, GetCurrentUser)
 
 //updated user detail
 
-router.route("/update-user-detail").post(VerifyJWT, UpdateUserDetail)
+router.route("/update-user-detail").patch(VerifyJWT, UpdateUserDetail)
 
 //updated user avatar
 
-router.route("/change-user-avatar").post(VerifyJWT, upload.fields([
+router.route("/change-user-avatar").patch(VerifyJWT, upload.fields([
   { name: "Avatar", maxCount: 1 },
 ]), ChangeUserAvatar )
 
 //update cover image
-router.route("/change-cover-image").post(VerifyJWT, upload.fields([
+router.route("/change-cover-image").patch(VerifyJWT, upload.fields([
   { name: "CoverImage", maxCount: 1 },
 ]), ChangeUserCoverImage )
+
+//get user channel
+
+router.route("/user-channel").get(VerifyJWT, GetUserChannel)
+
+//get watch History
+
+router.route("/get-watchhistory").get(VerifyJWT, GetWatchHistory)
 
 
 export default router;

@@ -4,6 +4,7 @@ import ApiError from "../utils/ApiError.js";
 import UploadOnCloudinary from "../utils/cloudinary.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 //Algorithm to create User Registration
 
@@ -387,6 +388,143 @@ const ChangeUserCoverImage = asyncHandler(async (req, res) => {
     );
 });
 
+//Algorithm for getting user profile with subscriber & subscribedTo
+//1. Get username using params of the youtube channel
+//2. check if username exist using findone method, if not throw error
+//3. Now, start using mongoDB aggregation pipeline
+//4. search the id by $match for next stage, to get the user document of that id
+//5. In Next stage, use $lookup to join or match the user id in the subscription document in the channel field to get subscriber
+//6. In Next stage, again use $lookup to join or match the user id in the subscription document in  the subscriber field to get SUbscribedTO
+//7. Next stage, use $addfield for subscribercount, subscribedtoCount, by calculating its number using $size
+//8. Now, use $project for sending the data in response
+//9. Now, send the json response to the client
+
+const GetUserChannel = asyncHandler(async (req, res) => {
+  const { params } = req.params;
+
+  if (!params) {
+    throw new ApiError(400, "username not found");
+  }
+
+  const UserID = User.findOne({
+    UserName: params,
+  });
+
+  if (!UserID) {
+    throw new ApiError(400, "user is not available");
+  }
+
+  const UserChannelDetail = User.aggregate([
+    {
+      $match: {
+        id: UserID,
+      },
+    },
+    {
+      $lookup: {
+        from: "Subscription",
+        localField: "_id",
+        foreignField: "Channel",
+        as: "Subscribers",
+      },
+    },
+    {
+      $lookup: {
+        from: "Subscription",
+        localField: "_id",
+        foreignField: "Subscriber",
+        as: "SubscribedTo",
+      },
+    },
+    {
+      $addFields: {
+        SubscribersCount: {
+          $size: "$Subscribers",
+        },
+        SubscriberedToCount: {
+          $size: "$SubscribedTo",
+        },
+      },
+    },
+    {
+      $project: {
+        SubscribersCount: 1,
+        SubscriberedToCount: 1,
+        UserName: 1,
+        FullName: 1,
+        Email: 1,
+        Avatar: 1,
+        CoverImage: 1,
+      },
+    },
+  ]);
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(
+        UserChannelDetail[0],
+        200,
+        "User channel profile fetched successfully"
+      )
+    );
+});
+
+//Algorithm to get watchhistory when logged user click to watch history
+//1. get user id from req.user (verifyjwt middleware will give it)
+//2. use aggregation pipeline and find out that user document from req.id using $match operator
+//3. In next stage, match the video id of watchHistory of this user document with the Video id of Video document
+//4. use sub pipeline to get the owner of the video
+//5. again use sub pipeline to limit the data of owner to fullname, email, username using $project
+//6. overwrite the owner field to remove array and to include just in object for keeping better for frontend
+//7. optional - in the root level, $project can be used for limiting to watchHistory
+
+const GetWatchHistory = asyncHandler(async (req, res) => {
+  const watchHistory = User.aggregate([
+    {
+      $match: {
+        _id: mongoose.Types.ObjectId(req.user._id),
+      },
+    },
+    {
+      $lookup: {
+        from: "Video",
+        localField: "WatchHistory",
+        foreignField: "_id",
+        as: "WatchHistory",
+        pipeline: [
+          {
+            $lookup: {
+              from: "User",
+              localField: "Owner",
+              foreignField: "_id",
+              as: Owner,
+              pipeline : [
+                {
+                  $project : {
+                    FullName : 1,
+                    UserName : 1, 
+                    Email :1
+                  }
+                }
+              ]
+            },
+          },
+          {
+            $addFields : {
+              Owner : {
+                $first : "$Owner"
+              }
+            }
+          }
+        ],
+      },
+    },
+  ]);
+
+  res.status(200).json(watchHistory[0].WatchHistory, 200, "Watch history videos got succesfully")
+});
+
 export {
   RegisterUser,
   LoggedInUser,
@@ -396,5 +534,7 @@ export {
   GetCurrentUser,
   UpdateUserDetail,
   ChangeUserAvatar,
-  ChangeUserCoverImage
+  ChangeUserCoverImage,
+  GetUserChannel,
+  GetWatchHistory
 };

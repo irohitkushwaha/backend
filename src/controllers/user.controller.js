@@ -108,7 +108,7 @@ const AccessRefreshTokenGenerator = async (user) => {
 };
 
 const LoggedInUser = asyncHandler(async (req, res) => {
-  console.log("1st below logged in user fn, req.body is", req.body);
+  console.log("req is", req);
   const { UserName, Email, Password } = req.body;
 
   if (!UserName && !Email) {
@@ -132,9 +132,6 @@ const LoggedInUser = asyncHandler(async (req, res) => {
   if (!password) {
     throw new ApiError(400, "Password is incorrect");
   }
-  console.log("Before calling AccessRefreshTokenGenerator", password);
-
-  console.log("Before calling AccessRefreshTokenGenerator");
 
   const AccessRefreshToken = await AccessRefreshTokenGenerator(user);
   console.log("AccessRefreshToken:", AccessRefreshToken);
@@ -149,4 +146,42 @@ const LoggedInUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse({}, 200, "Logged in Successfully"));
 });
 
-export { RegisterUser, LoggedInUser };
+//Algorithm for Logout
+
+//1. Check whether user is Logged or not through middleware
+///1.1 Verify the access token of user with secret key access token through jwt verify
+//2. Remove refresh token from database
+//3. Send Response, status code, clear cookies access and refresh token, send message
+
+const LogoutUser = asyncHandler(async (req, res) => {
+  const { _id } = req.verifiedAccessToken;
+  if (!_id) {
+    throw new ApiError(400, "Invalid or missing user information in token");
+  }
+  const RemoveRefresh = await User.findByIdAndUpdate(
+    _id,
+    {
+      $unset: { RefreshToken: 1 },
+    },
+    {
+      runValidators: false,
+    }
+  );
+
+  if(!RemoveRefresh){
+    throw new ApiError(500, "error while removing refresh token")
+  }
+
+  const option = {
+    httpOnly : true,
+    // secure : true
+  }
+
+  res
+  .status(200)
+  .clearCookie("RefreshToken", option)
+  .clearCookie("AccessToken", option)
+  .json(new ApiResponse({},200, "Logout successful"))
+});
+
+export { RegisterUser, LoggedInUser, LogoutUser };

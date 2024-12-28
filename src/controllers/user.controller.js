@@ -19,6 +19,8 @@ import ApiResponse from "../utils/ApiResponse.js";
 //11. finally, send response using apiresponse
 
 const RegisterUser = asyncHandler(async (req, res) => {
+  console.log("1st below register in user fn, req.body is", req.body);
+
   const { UserName, FullName, Email, Password } = req.body;
 
   if ([UserName, FullName, Email, Password].some((field) => !field)) {
@@ -71,7 +73,6 @@ const RegisterUser = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(isUserSaved, 200));
 });
 
-
 //Alogithm for Logging the user
 //1. get email/username and password from frontend
 //2. make sure at least one of email or username is available and password, should not be empty
@@ -94,6 +95,8 @@ const RegisterUser = asyncHandler(async (req, res) => {
 const AccessRefreshTokenGenerator = async (user) => {
   const AccessToken = await user.generateAccessToken();
   const RefreshToken = await user.generateRefreshToken();
+  console.log("Generated AccessToken:", AccessToken);
+  console.log("Generated RefreshToken:", RefreshToken);
   await User.findByIdAndUpdate(
     user._id,
     {
@@ -105,14 +108,19 @@ const AccessRefreshTokenGenerator = async (user) => {
 };
 
 const LoggedInUser = asyncHandler(async (req, res) => {
+  console.log("1st below logged in user fn, req.body is", req.body);
   const { UserName, Email, Password } = req.body;
 
   if (!UserName && !Email) {
     throw new ApiError(401, "Username or Email is Required!");
   }
 
+  if (!Password) {
+    throw new ApiError(401, "Password is Required!");
+  }
+
   const user = await User.findOne({
-    $or: [{ UserName},{Email} ],
+    $or: [{ UserName }, { Email }],
   });
 
   if (!user) {
@@ -124,8 +132,12 @@ const LoggedInUser = asyncHandler(async (req, res) => {
   if (!password) {
     throw new ApiError(400, "Password is incorrect");
   }
+  console.log("Before calling AccessRefreshTokenGenerator", password);
+
+  console.log("Before calling AccessRefreshTokenGenerator");
 
   const AccessRefreshToken = await AccessRefreshTokenGenerator(user);
+  console.log("AccessRefreshToken:", AccessRefreshToken);
   const option = {
     httpOnly: true,
     // secure: true,
@@ -137,6 +149,4 @@ const LoggedInUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse({}, 200, "Logged in Successfully"));
 });
 
-
-export default {RegisterUser, 
-LoggedInUser};
+export { RegisterUser, LoggedInUser };

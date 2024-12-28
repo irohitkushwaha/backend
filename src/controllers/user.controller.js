@@ -121,7 +121,8 @@ const LoggedInUser = asyncHandler(async (req, res) => {
 
   const user = await User.findOne({
     $or: [{ UserName }, { Email }],
-  });
+  }).select("-Password -RefreshToken");
+  console.log("user is", user);
 
   if (!user) {
     throw new ApiError(400, "Invalid email or username, doesn`t exist");
@@ -132,9 +133,6 @@ const LoggedInUser = asyncHandler(async (req, res) => {
   if (!password) {
     throw new ApiError(400, "Password is incorrect");
   }
-  console.log("Before calling AccessRefreshTokenGenerator", password);
-
-  console.log("Before calling AccessRefreshTokenGenerator");
 
   const AccessRefreshToken = await AccessRefreshTokenGenerator(user);
   console.log("AccessRefreshToken:", AccessRefreshToken);
@@ -146,7 +144,7 @@ const LoggedInUser = asyncHandler(async (req, res) => {
     .status(200)
     .cookie("RefreshToken", AccessRefreshToken.RefreshToken, option)
     .cookie("AccessToken", AccessRefreshToken.AccessToken, option)
-    .json(new ApiResponse({}, 200, "Logged in Successfully"));
+    .json(new ApiResponse(user, 200, "Logged in Successfully"));
 });
 
 export { RegisterUser, LoggedInUser };

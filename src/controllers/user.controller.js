@@ -292,6 +292,101 @@ const GetCurrentUser = asyncHandler(async (req, res) => {
 //4. make a db call findbyidandupdate and update
 //5. return response to user
 
+const UpdateUserDetail = asyncHandler(async (req, res) => {
+  const { FullName, UserName, Email } = req.body;
+  if (!FullName && !UserName && !Email) {
+    throw new ApiError(400, "at leats one field is required");
+  }
+
+  const UpdateFields = {};
+  if (FullName) {
+    UpdateFields.FullName = FullName;
+  }
+  if (UserName) {
+    UpdateFields.UserName = UserName;
+  }
+  if (Email) {
+    UpdateFields.Email = Email;
+  }
+
+  const UpdatedFields = await User.findByIdAndUpdate(
+    req.user._id,
+    UpdateFields,
+    { new: true }
+  ).select("-Password -RefreshToken");
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(UpdatedFields, 200, "User detail updated successfully")
+    );
+});
+
+//Algorithm for changing user avatar and similarly for coverimage
+//1. use multer middleware to let the file uploaded on local server
+//2. check if uploaded then upload to cloudinary
+//3. get url from cloudinary
+//4. make a db call and update avatar filed by replacing avatar.url
+
+const ChangeUserAvatar = asyncHandler(async (req, res) => {
+  console.log("req.files is", req.files);
+  const Avatar = req.files?.Avatar?.[0].path;
+  if (!Avatar) {
+    throw new ApiError(400, "Avatar file is required");
+  }
+  console.log("avatar is", Avatar);
+  const UploadAvatarOnCloudinary = await UploadOnCloudinary(Avatar);
+  console.log("updated cloudinary url of avatar is ", UploadAvatarOnCloudinary);
+
+  if (!UploadAvatarOnCloudinary) {
+    throw new ApiError(
+      500,
+      "something went wrong while uploading avatar on cloudinary"
+    );
+  }
+
+  const updatedAvatar = await User.findByIdAndUpdate(
+    req.user._id,
+    { Avatar: UploadAvatarOnCloudinary.url },
+    {
+      new: true,
+    }
+  ).select("Avatar");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(updatedAvatar, 200, "Avatar changed successfully"));
+});
+
+const ChangeUserCoverImage = asyncHandler(async (req, res) => {
+  const CoverImage = req.files?.CoverImage?.[0].path;
+  if (!CoverImage) {
+    throw new ApiError(400, "CoverImage file is required");
+  }
+  const UploadCoverImageOnCloudinary = await UploadOnCloudinary(CoverImage);
+
+  if (!UploadCoverImageOnCloudinary) {
+    throw new ApiError(
+      500,
+      "something went wrong while uploading Cover Image on cloudinary"
+    );
+  }
+
+  const updatedCoverImage = await User.findByIdAndUpdate(
+    req.user._id,
+    { CoverImage: UploadCoverImageOnCloudinary.url },
+    {
+      new: true,
+    }
+  ).select("CoverImage");
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(updatedCoverImage, 200, "CoverImage changed successfully")
+    );
+});
+
 export {
   RegisterUser,
   LoggedInUser,
@@ -299,4 +394,7 @@ export {
   RefreshingToken,
   ChangePassword,
   GetCurrentUser,
+  UpdateUserDetail,
+  ChangeUserAvatar,
+  ChangeUserCoverImage
 };

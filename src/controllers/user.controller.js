@@ -400,24 +400,27 @@ const ChangeUserCoverImage = asyncHandler(async (req, res) => {
 //9. Now, send the json response to the client
 
 const GetUserChannel = asyncHandler(async (req, res) => {
-  const { params } = req.params;
+  const { UserName } = req.params;
 
-  if (!params) {
+  if (!UserName) {
     throw new ApiError(400, "username not found");
   }
 
-  const UserID = User.findOne({
-    UserName: params,
-  });
+  const UserID = await User.findOne(
+    {
+      UserName: UserName,
+    },
+    { _id: 1 }
+  );
 
   if (!UserID) {
     throw new ApiError(400, "user is not available");
   }
 
-  const UserChannelDetail = User.aggregate([
+  const UserChannelDetail = await User.aggregate([
     {
       $match: {
-        id: UserID,
+        _id: UserID._id,
       },
     },
     {
@@ -459,6 +462,13 @@ const GetUserChannel = asyncHandler(async (req, res) => {
     },
   ]);
 
+  if (!UserChannelDetail.length) {
+    throw new ApiError(
+      500,
+      "issue while getting subscriber and subscribed to along with user profile"
+    );
+  }
+
   res
     .status(200)
     .json(
@@ -480,7 +490,7 @@ const GetUserChannel = asyncHandler(async (req, res) => {
 //7. optional - in the root level, $project can be used for limiting to watchHistory
 
 const GetWatchHistory = asyncHandler(async (req, res) => {
-  const watchHistory = User.aggregate([
+  const watchHistory = await User.aggregate([
     {
       $match: {
         _id: mongoose.Types.ObjectId(req.user._id),
@@ -498,31 +508,43 @@ const GetWatchHistory = asyncHandler(async (req, res) => {
               from: "User",
               localField: "Owner",
               foreignField: "_id",
-              as: Owner,
-              pipeline : [
+              as: "Owner",
+              pipeline: [
                 {
-                  $project : {
-                    FullName : 1,
-                    UserName : 1, 
-                    Email :1
-                  }
-                }
-              ]
+                  $project: {
+                    FullName: 1,
+                    UserName: 1,
+                    Email: 1,
+                  },
+                },
+              ],
             },
           },
           {
-            $addFields : {
-              Owner : {
-                $first : "$Owner"
-              }
-            }
-          }
+            $addFields: {
+              Owner: {
+                $first: "$Owner",
+              },
+            },
+          },
         ],
       },
     },
   ]);
 
-  res.status(200).json(watchHistory[0].WatchHistory, 200, "Watch history videos got succesfully")
+  if (!watchHistory.length) {
+    throw new ApiError(500, "something went wrong while getting watchHistory");
+  }
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(
+        watchHistory[0].WatchHistory,
+        200,
+        "Watch history videos got succesfully"
+      )
+    );
 });
 
 export {
@@ -536,5 +558,5 @@ export {
   ChangeUserAvatar,
   ChangeUserCoverImage,
   GetUserChannel,
-  GetWatchHistory
+  GetWatchHistory,
 };

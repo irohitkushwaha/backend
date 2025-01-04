@@ -1,7 +1,7 @@
-import { Router, Router } from "express";
-import upload from "../Middlewares/file.middleware";
-import VerifyJWT from "../Middlewares/verifyjwt.middleware";
-import { VideoUpload } from "../controllers/video.controller";
+import { Router } from "express";
+import upload from "../Middlewares/file.middleware.js";
+import VerifyJWT from "../Middlewares/verifyjwt.middleware.js";
+import { VideoUpload } from "../controllers/video.controller.js";
 
 const router = Router();
 
@@ -9,13 +9,15 @@ router.route("/upload-video").post(
   VerifyJWT,
   upload.fields([
     {
-      Video: 1,
+      name: "Video",
       maxCount: 1,
     },
     {
-      Thumbnail: 1,
+      name: "Thumbnail",
       maxCount: 1,
     },
   ]),
   VideoUpload
 );
+
+export default router;

@@ -1,8 +1,10 @@
-import User from "../Models/user.model";
-import { Subscription } from "../Models/subscription.model";
-import asyncHandler from "../utils/AsyncHandler";
-import ApiError from "../utils/ApiError";
-import ApiResponse from "../utils/ApiResponse";
+import User from "../Models/user.model.js";
+import { Subscription } from "../Models/subscription.model.js";
+import asyncHandler from "../utils/AsyncHandler.js";
+import ApiError from "../utils/ApiError.js";
+import ApiResponse from "../utils/ApiResponse.js";
+import { Video } from "../Models/video.model.js";
+import mongoose from "mongoose";
 
 //Algorithm for saving the subscriber data into subscription document, which id subscribed to which id
 //1. take the user id through req.user._id who is subscribing
@@ -15,14 +17,21 @@ import ApiResponse from "../utils/ApiResponse";
 
 const SubscriberData = asyncHandler(async (req, res) => {
   const SubscriberId = req.user._id;
-  const ChannelId = req.params.ChannelId;
+  const VideoId = req.params.VideoId;
+
+  if (!mongoose.Types.ObjectId.isValid(SubscriberId)) {
+    throw new ApiError(400, "Invalid subscriber ID");
+  }
+  if (!mongoose.Types.ObjectId.isValid(VideoId)) {
+    throw new ApiError(400, "Invalid video ID");
+  }
 
   const Subscriber = await User.findById({
     _id: SubscriberId,
   });
 
-  const SubscribedTo = await User.findOne({
-    UserName: SubscriberId,
+  const SubscribedTo = await Video.findOne({
+    _id: VideoId,
   });
 
   if (!Subscriber) {
@@ -30,12 +39,12 @@ const SubscriberData = asyncHandler(async (req, res) => {
   }
 
   if (!SubscribedTo) {
-    throw new ApiError(400, "Channel user doesn`t exist");
+    throw new ApiError(400, "Video doesn`t exist");
   }
 
-  const SubscriptionExist = await Subscription.find({
+  const SubscriptionExist = await Subscription.findOne({
     Subscriber: Subscriber._id,
-    Channel: SubscribedTo._id,
+    Channel: SubscribedTo.Owner,
   });
 
   if (SubscriptionExist) {
@@ -44,11 +53,13 @@ const SubscriberData = asyncHandler(async (req, res) => {
 
   const SaveSubscription = await Subscription.create({
     Subscriber: Subscriber._id,
-    Channel: SubscribedTo._id,
+    Channel: SubscribedTo.Owner,
   });
 
-  res.status(200).json(new ApiResponse(SaveSubscription));
+  res.status(200).json(new ApiResponse(SaveSubscription, 200, "Subscribed successfully"));
 });
+
+export {SubscriberData}
 
 
 

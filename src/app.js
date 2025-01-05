@@ -26,4 +26,9 @@ app.use("/api/v1/register", UserRouter);
 
 import VideoRouter from "./Routes/video.router.js";
 app.use("/api/v1/video", VideoRouter);
+
+import SubscriptionRouter from "./Routes/subscription.router.js"
+ app.use("/api/v1/subscription", SubscriptionRouter)
+
 export default app;
+

@@ -58,7 +58,94 @@ const VideoUpload = asyncHandler(async (req, res) => {
     );
   }
 
-  res.status(200).json(new ApiResponse(UploadVideoDetails, 200, "Video Uploaded successfully"));
+  res
+    .status(200)
+    .json(
+      new ApiResponse(UploadVideoDetails, 200, "Video Uploaded successfully")
+    );
 });
 
-export { VideoUpload };
+
+//Algorithm for sending video list to homepage
+//1. get page and limit query using req.query from frontend
+//2. calculate skip using page and limit - skip = page -1 * limit
+//3. start using mongodo aggregation pipeline of video document
+//4. filter the video document by matching isPublished to true
+//5. join the user document to match with the owner id by using $lookup
+//6. use pipeline to above lookup to project only Fullname, Avatar
+//7. use addfield to overwite for removing array or use $unwind to remove array
+//8. sort the video by more views first, -1
+//9. use skip to skip the items
+//10. use limit to keep the no. of items
+//11. use project to send only necessaery data
+//12. count the video document using videoCount
+//13. check has more
+//14. finally send response to frontend
+
+const GetVideosList = asyncHandler(async (req, res) => {
+  const { page, limit } = req.query;
+
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+
+  const VideosList = await Video.aggregate([
+    {
+      $match: {
+        isPublished: true,
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "Owner",
+        foreignField: "_id",
+        as: "Owner",
+        pipeline: [
+          {
+            $project: {
+              FullName: 1,
+              Avatar: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
+      $unwind: "$Owner",
+    },
+    {
+      $project: {
+        Thumbnail: 1,
+        Title: 1,
+        Owner: 1,
+        views: 1,
+        Duration: 1,
+      },
+    },
+    {
+      $skip: skip,
+    },
+    {
+      $sort : {
+        views : -1
+      }
+    },
+    {
+      $limit: parseInt(limit),
+    },
+  ]);
+
+  const TotalVideos = await Video.countDocuments({ isPublished: true });
+  const HasMore = skip + limit < TotalVideos;
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(
+        { VideosList, HasMore, page, limit, TotalVideos },
+        200,
+        "Video List Fetched Successfullly"
+      )
+    );
+});
+
+export { VideoUpload, GetVideosList };

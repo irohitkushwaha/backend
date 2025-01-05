@@ -1,7 +1,7 @@
 import { Router } from "express";
 import upload from "../Middlewares/file.middleware.js";
 import VerifyJWT from "../Middlewares/verifyjwt.middleware.js";
-import { VideoUpload } from "../controllers/video.controller.js";
+import { GetVideosList, VideoUpload } from "../controllers/video.controller.js";
 
 const router = Router();
 
@@ -20,4 +20,8 @@ router.route("/upload-video").post(
   VideoUpload
 );
 
+
+//videoList sending
+
+router.route("/videos-list").get(GetVideosList)
 export default router;

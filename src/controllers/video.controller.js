@@ -171,7 +171,7 @@ const GetVideoUserSubscriber = asyncHandler(async (req, res) => {
   const SendVideoDetails = await Video.aggregate([
     {
       $match: {
-        _id: mongoose.Types.ObjectId(VideoId),
+        _id: new mongoose.Types.ObjectId(VideoId),
       },
     },
     {
@@ -180,9 +180,64 @@ const GetVideoUserSubscriber = asyncHandler(async (req, res) => {
         localField: "Owner",
         foreignField: "_id",
         as: "Owner",
+        pipeline: [
+          {
+            $project: {
+              FullName: 1,
+              Avatar: 1,
+              _id: 1,
+            },
+          },
+        ],
       },
     },
+    {
+      $unwind: "$Owner",
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "Owner._id",
+        foreignField: "Subscriber",
+        as: "SubscribedTo",
+      },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "Owner._id",
+        foreignField: "Channel",
+        as: "Subscriber",
+      },
+    },
+    {
+      $addFields: {
+        SubscribersCount: {
+          $size: "$Subscriber",
+        },
+        SubscribedToCount: {
+          $size: "$SubscribedTo",
+        },
+      },
+    },
+    {
+      $project : {
+        VideoFile : 1,
+        Title : 1,
+        views : 1,
+        Description : 1,
+        Owner : 1,
+        SubscribersCount : 1,
+        SubscribedToCount : 1
+      }
+    }
   ]);
+
+  if (!SendVideoDetails.length) {
+    throw new ApiError(404, "Video not found");
+  }
+
+  res.status(200).json(new ApiResponse (SendVideoDetails, 200, "Video details fetched successfully"))
 });
 
-export { VideoUpload, GetVideosList };
+export { VideoUpload, GetVideosList, GetVideoUserSubscriber };

@@ -30,5 +30,10 @@ app.use("/api/v1/video", VideoRouter);
 import SubscriptionRouter from "./Routes/subscription.router.js"
  app.use("/api/v1/subscription", SubscriptionRouter)
 
+
+ import SaveWatchHistoryRouter from "./Routes/watchhistory.router.js"
+
+app.use("/api/v1/watchhistory",SaveWatchHistoryRouter )
+
 export default app;
 

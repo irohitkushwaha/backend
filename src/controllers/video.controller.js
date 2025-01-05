@@ -164,8 +164,26 @@ const GetVideosList = asyncHandler(async (req, res) => {
 const GetVideoUserSubscriber = asyncHandler(async (req, res) => {
   const { VideoId } = req.params;
 
-  if (!VideoId) {
+  if (!mongoose.Types.ObjectId.isValid(VideoId)) {
     throw new ApiError(400, "Video Id not found");
+  }
+
+  const VIDEO = await Video.findOneAndUpdate(
+    {
+      _id: VideoId,
+    },
+    {
+      $inc: {
+        views: 1,
+      },
+    },
+    {
+      new: true,
+    }
+  );
+
+  if (!VIDEO) {
+    throw new ApiError(400, "Video Not Found");
   }
 
   const SendVideoDetails = await Video.aggregate([
@@ -221,23 +239,31 @@ const GetVideoUserSubscriber = asyncHandler(async (req, res) => {
       },
     },
     {
-      $project : {
-        VideoFile : 1,
-        Title : 1,
-        views : 1,
-        Description : 1,
-        Owner : 1,
-        SubscribersCount : 1,
-        SubscribedToCount : 1
-      }
-    }
+      $project: {
+        VideoFile: 1,
+        Title: 1,
+        views: 1,
+        Description: 1,
+        Owner: 1,
+        SubscribersCount: 1,
+        SubscribedToCount: 1,
+      },
+    },
   ]);
 
   if (!SendVideoDetails.length) {
     throw new ApiError(404, "Video not found");
   }
 
-  res.status(200).json(new ApiResponse (SendVideoDetails, 200, "Video details fetched successfully"))
+  res
+    .status(200)
+    .json(
+      new ApiResponse(
+        SendVideoDetails,
+        200,
+        "Video details fetched successfully"
+      )
+    );
 });
 
 export { VideoUpload, GetVideosList, GetVideoUserSubscriber };

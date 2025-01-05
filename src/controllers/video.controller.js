@@ -3,6 +3,7 @@ import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/AsyncHandler.js";
 import UploadOnCloudinary from "../utils/cloudinary.js";
 import { Video } from "../Models/video.model.js";
+import mongoose from "mongoose";
 
 //algorithm to upload the video url as well as thumbnail url on database
 //1. use multer middleware in routing for uploading the video and thumbnail temporarily on local server
@@ -65,7 +66,6 @@ const VideoUpload = asyncHandler(async (req, res) => {
     );
 });
 
-
 //Algorithm for sending video list to homepage
 //1. get page and limit query using req.query from frontend
 //2. calculate skip using page and limit - skip = page -1 * limit
@@ -125,9 +125,9 @@ const GetVideosList = asyncHandler(async (req, res) => {
       $skip: skip,
     },
     {
-      $sort : {
-        views : -1
-      }
+      $sort: {
+        views: -1,
+      },
     },
     {
       $limit: parseInt(limit),
@@ -146,6 +146,43 @@ const GetVideosList = asyncHandler(async (req, res) => {
         "Video List Fetched Successfullly"
       )
     );
+});
+
+// Algorithm to Get Video and User Details with Subscriber Details Using videoID
+// 1. Get videoID from request parameters
+// 2. Validate if the videoID exists in the database; if not, throw an error
+// 3. Use MongoDB aggregation pipeline on the Video collection
+// 4. Filter the Video document using $match with the given videoID
+// 5. Use $lookup to join the Owner field in the Video document with the User collection
+//    to include owner details such as FullName and Avatar
+// 6. Use a sub-pipeline in $lookup to join the User collection with the Subscription
+//    collection to calculate the SubscriberCount for the owner
+// 7. Use $addFields or $set to add the calculated SubscriberCount to the response
+// 8. Use $project to select only the required fields such as Title, Thumbnail, Owner, and SubscriberCount
+// 9. Send the final processed response back to the client
+
+const GetVideoUserSubscriber = asyncHandler(async (req, res) => {
+  const { VideoId } = req.params;
+
+  if (!VideoId) {
+    throw new ApiError(400, "Video Id not found");
+  }
+
+  const SendVideoDetails = await Video.aggregate([
+    {
+      $match: {
+        _id: mongoose.Types.ObjectId(VideoId),
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "Owner",
+        foreignField: "_id",
+        as: "Owner",
+      },
+    },
+  ]);
 });
 
 export { VideoUpload, GetVideosList };

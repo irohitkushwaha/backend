@@ -35,5 +35,11 @@ import SubscriptionRouter from "./Routes/subscription.router.js"
 
 app.use("/api/v1/watchhistory",SaveWatchHistoryRouter )
 
+
+//tweet routing
+
+import TweetSaveRouters from "./Routes/tweet.router.js"
+app.use("/api/v1/tweet", TweetSaveRouters)
+
 export default app;
 

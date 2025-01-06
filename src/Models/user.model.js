@@ -25,10 +25,12 @@ const UserSchema = new Schema(
       type: String,
       required: true,
     },
-    WatchHistory: [{
-      type: Schema.Types.ObjectId,
-      ref: "Video",
-    }],
+    WatchHistory: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Video",
+      },
+    ],
     Avatar: {
       type: String, //cloudniary
       required: true,
@@ -82,6 +84,6 @@ UserSchema.methods.generateRefreshToken = async function () {
   );
 };
 
- const  User = mongoose.model("User", UserSchema);
+const User = mongoose.model("User", UserSchema);
 
- export default User
+export default User;

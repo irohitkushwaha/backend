@@ -2,8 +2,8 @@ import mongoose, { Schema } from "mongoose";
 
 const CommentSchema = Schema(
   {
-    content: {
-      type: string,
+    Content: {
+      type: String,
       required: true,
     },
     Video: {
@@ -24,4 +24,4 @@ const CommentSchema = Schema(
   }
 );
 
-export const comment = mongoose.model("comment", CommentSchema);
+export const Comment = mongoose.model("Comment", CommentSchema);

@@ -41,5 +41,10 @@ app.use("/api/v1/watchhistory",SaveWatchHistoryRouter )
 import TweetSaveRouters from "./Routes/tweet.router.js"
 app.use("/api/v1/tweet", TweetSaveRouters)
 
+//comment routing
+
+import CommentRouting from "./Routes/comment.router.js"
+app.use("/api/v1/comment", CommentRouting)
+
 export default app;
 

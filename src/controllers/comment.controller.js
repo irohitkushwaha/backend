@@ -119,8 +119,7 @@ const SaveCommentOfTwitter = asyncHandler(async (req, res) => {
 //11.send response to the use
 
 const SendCommentsOfVideo = asyncHandler(async (req, res) => {
-  const videoid = req.params.videoid;
-  const { page, limit } = req.query;
+  const { page, limit, videoid } = req.query;
   const VIDEOID = await Video.findById(videoid);
   if (!VIDEOID) {
     throw new ApiError(400, "Video id doesn`t exist");
@@ -215,7 +214,7 @@ const SendCommentsOfTweet = asyncHandler(async (req, res) => {
 
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
-  const SendCommentsOfTweet = await Comment.aggregate([
+  const CommentsOfTweet = await Comment.aggregate([
     {
       $match: {
         Tweet: new mongoose.Types.ObjectId(TWEETID._id),
@@ -259,7 +258,7 @@ const SendCommentsOfTweet = asyncHandler(async (req, res) => {
     },
     {
       $addFields: {
-        LikesCountForComment: {
+        LikesCountForTweet: {
           $size: "$LikesForTweet",
         },
       },
@@ -267,14 +266,14 @@ const SendCommentsOfTweet = asyncHandler(async (req, res) => {
     {
       $project: {
         Content: 1,
-        Video: 1,
+        Tweet: 1,
         Owner: 1,
         LikesCountForTweet: 1,
       },
     },
   ]);
 
-  if (!SendCommentsOfTweet) {
+  if (!CommentsOfTweet.length) {
     throw new ApiError(
       500,
       "Server error while finding comment for this tweet"
@@ -285,11 +284,11 @@ const SendCommentsOfTweet = asyncHandler(async (req, res) => {
     .status(200)
     .json(
       new ApiResponse(
-        SendCommentsOfTweet,
+        CommentsOfTweet,
         200,
         "Comment sent successfully for this Tweet"
       )
     );
 });
 
-export { SaveCommentOfTwitter, SaveCommentOfVideo, SendCommentsOfVideo };
+export { SaveCommentOfTwitter, SaveCommentOfVideo, SendCommentsOfVideo, SendCommentsOfTweet };

@@ -229,7 +229,19 @@ const GetVideoUserSubscriber = asyncHandler(async (req, res) => {
       },
     },
     {
+      $lookup : {
+        from : "likes",
+        localField : "_id",
+        foreignField : "Video",
+        as : "VideoLikes"
+
+      }
+    },
+    {
       $addFields: {
+        VideoLikesCount : {
+          $size : "$VideoLikes"
+        },
         SubscribersCount: {
           $size: "$Subscriber",
         },
@@ -247,6 +259,7 @@ const GetVideoUserSubscriber = asyncHandler(async (req, res) => {
         Owner: 1,
         SubscribersCount: 1,
         SubscribedToCount: 1,
+        VideoLikesCount: 1
       },
     },
   ]);

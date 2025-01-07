@@ -26,6 +26,10 @@ const SaveLikeForVideo = asyncHandler(async (req, res) => {
   if (!mongoose.Types.ObjectId.isValid(videoid)) {
     throw new ApiError(400, "video id is not valid");
   }
+  const VIDEOID = await Video.findById(videoid);
+  if (!VIDEOID) {
+    throw new ApiError(400, "Video id doesn`t exist");
+  }
 
   const ExistLike = await Video.findOne({
     Video: VIDEOID._id,
@@ -34,11 +38,6 @@ const SaveLikeForVideo = asyncHandler(async (req, res) => {
 
   if (ExistLike) {
     throw new ApiError(400, "user has been already liked this video");
-  }
-
-  const VIDEOID = await Video.findById(videoid);
-  if (!VIDEOID) {
-    throw new ApiError(400, "Video id doesn`t exist");
   }
 
   const SaveLikeForVideo = await Likes.create({
@@ -139,7 +138,7 @@ const SaveLikedOfTweet = asyncHandler(async (req, res) => {
     );
 });
 
-export {SaveLikeForComment, SaveLikedOfTweet, SaveLikeForVideo}
+//Algorithm for 
 
 
-
+export { SaveLikeForComment, SaveLikedOfTweet, SaveLikeForVideo };

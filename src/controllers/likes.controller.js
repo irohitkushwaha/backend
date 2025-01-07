@@ -31,7 +31,7 @@ const SaveLikeForVideo = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Video id doesn`t exist");
   }
 
-  const ExistLike = await Video.findOne({
+  const ExistLike = await Likes.findOne({
     Video: VIDEOID._id,
     Owner: userid,
   });
@@ -77,6 +77,15 @@ const SaveLikeForComment = asyncHandler(async (req, res) => {
     throw new ApiError(400, "comment id doesn`t exist");
   }
 
+  const ExistLike = await Likes.findOne({
+    Comment: COMMENTID._id,
+    Owner: userid,
+  })
+
+  if(ExistLike){
+    throw new ApiError(400, "User has been already liked this comment")
+  }
+
   const SaveLikeForComment = await Likes.create({
     Comment: COMMENTID._id,
     Owner: userid,
@@ -116,6 +125,15 @@ const SaveLikedOfTweet = asyncHandler(async (req, res) => {
 
   if (!TWEETID) {
     throw new ApiError(400, "tweet id doesn`t exist");
+  }
+
+  const ExistLike = await Likes.findOne({
+    Tweet: TWEETID._id,
+    Owner: userid,
+  })
+
+  if(ExistLike){
+    throw new ApiError(400, "user has been already liked this tweet")
   }
 
   const SaveLikedOfTweet = await Likes.create({

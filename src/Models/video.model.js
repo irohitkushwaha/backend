@@ -12,12 +12,18 @@ const VideoSchema = new Schema(
     },
     views: {
       type: Number,
-      default : 0
+      default: 0,
     },
     isPublished: {
       type: Boolean,
       default: true,
     },
+
+    isShorts: {
+      type: Boolean,
+      default: false,
+    },
+
     Owner: {
       type: Schema.Types.ObjectId,
       ref: "User",

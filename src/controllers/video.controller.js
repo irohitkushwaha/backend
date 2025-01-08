@@ -22,7 +22,7 @@ const VideoUpload = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Thumbnail is not found, upload it");
   }
 
-  const { Title, Description, PublishStatus } = req.body;
+  const { Title, Description, PublishStatus, isShorts } = req.body;
 
   if ([Title, Description, PublishStatus].some((field) => !field)) {
     throw new ApiError(400, "Both title and description is required");
@@ -50,6 +50,7 @@ const VideoUpload = asyncHandler(async (req, res) => {
     Duration: VideoUploadOnCloudinary.duration,
     Owner: req.user._id,
     isPublished: PublishStatus,
+    isShorts : isShorts
   });
 
   if (!UploadVideoDetails) {
@@ -91,6 +92,7 @@ const GetVideosList = asyncHandler(async (req, res) => {
     {
       $match: {
         isPublished: true,
+        isShorts: false,
       },
     },
     {
@@ -119,6 +121,115 @@ const GetVideosList = asyncHandler(async (req, res) => {
         Owner: 1,
         views: 1,
         Duration: 1,
+        isShorts : 1
+      },
+    },
+    {
+      $skip: skip,
+    },
+    {
+      $sort: {
+        views: -1,
+      },
+    },
+    {
+      $limit: parseInt(limit),
+    },
+  ]);
+
+  const TotalVideos = await Video.countDocuments({ isPublished: true });
+  const HasMore = skip + limit < TotalVideos;
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(
+        { VideosList, HasMore, page, limit, TotalVideos },
+        200,
+        "Video List Fetched Successfullly"
+      )
+    );
+});
+
+//get short video list
+const GetShortsList = asyncHandler(async (req, res) => {
+  const { page, limit } = req.query;
+
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+
+  const VideosList = await Video.aggregate([
+    {
+      $match: {
+        isPublished: true,
+        isShorts: true,
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "Owner",
+        foreignField: "_id",
+        as: "Owner",
+        pipeline: [
+          {
+            $project: {
+              FullName: 1,
+              Avatar: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
+      $unwind: "$Owner",
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "Owner._id",
+        foreignField: "Subscriber",
+        as: "SubscribedTo",
+      },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "Owner._id",
+        foreignField: "Channel",
+        as: "Subscriber",
+      },
+    },
+    {
+      $lookup: {
+        from: "likes",
+        localField: "_id",
+        foreignField: "Video",
+        as: "VideoLikes",
+      },
+    },
+    {
+      $addFields: {
+        VideoLikesCount: {
+          $size: "$VideoLikes",
+        },
+        SubscribersCount: {
+          $size: "$Subscriber",
+        },
+        SubscribedToCount: {
+          $size: "$SubscribedTo",
+        },
+      },
+    },
+    {
+      $project: {
+        Title: 1, 
+        Owner: 1,
+        views: 1,
+        VideoFile: 1,
+        isShorts : 1,
+        VideoLikesCount : 1,
+        SubscribersCount : 1,
+        SubscribedToCount : 1
       },
     },
     {
@@ -189,7 +300,7 @@ const GetVideoUserSubscriber = asyncHandler(async (req, res) => {
   const SendVideoDetails = await Video.aggregate([
     {
       $match: {
-        _id: new mongoose.Types.ObjectId(VideoId),
+        _id: new mongoose.Types.ObjectId(VIDEO._id),
       },
     },
     {
@@ -229,18 +340,17 @@ const GetVideoUserSubscriber = asyncHandler(async (req, res) => {
       },
     },
     {
-      $lookup : {
-        from : "likes",
-        localField : "_id",
-        foreignField : "Video",
-        as : "VideoLikes"
-
-      }
+      $lookup: {
+        from: "likes",
+        localField: "_id",
+        foreignField: "Video",
+        as: "VideoLikes",
+      },
     },
     {
       $addFields: {
-        VideoLikesCount : {
-          $size : "$VideoLikes"
+        VideoLikesCount: {
+          $size: "$VideoLikes",
         },
         SubscribersCount: {
           $size: "$Subscriber",
@@ -259,7 +369,7 @@ const GetVideoUserSubscriber = asyncHandler(async (req, res) => {
         Owner: 1,
         SubscribersCount: 1,
         SubscribedToCount: 1,
-        VideoLikesCount: 1
+        VideoLikesCount: 1,
       },
     },
   ]);
@@ -279,4 +389,4 @@ const GetVideoUserSubscriber = asyncHandler(async (req, res) => {
     );
 });
 
-export { VideoUpload, GetVideosList, GetVideoUserSubscriber };
+export { VideoUpload, GetVideosList, GetVideoUserSubscriber, GetShortsList };

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import upload from "../Middlewares/file.middleware.js";
 import VerifyJWT from "../Middlewares/verifyjwt.middleware.js";
-import { GetVideosList, GetVideoUserSubscriber, VideoUpload } from "../controllers/video.controller.js";
+import { GetShortsList, GetVideosList, GetVideoUserSubscriber, VideoUpload } from "../controllers/video.controller.js";
 
 const router = Router();
 
@@ -24,10 +24,16 @@ router.route("/upload-video").post(
 //videoList sending
 
 router.route("/videos-list").get(GetVideosList)
-export default router;
 
 //Video sending with all details
 
-router.route("/:VideoId").get(GetVideoUserSubscriber)
+router.route("/each-video/:VideoId").get(GetVideoUserSubscriber)
+
+//short video sending in list with all detail
+
+router.route("/shorts-list").get(GetShortsList)
+
+export default router;
+
 
 

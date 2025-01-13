@@ -1,12 +1,12 @@
 import dotenv from "dotenv";
 import DBConnection from "./db/index.js";
-import app from "./app.js";
+import {server} from "./app.js"
 dotenv.config();
 console.log("importing env", process.env.PORT);
 
 DBConnection()
   .then(() => {
-    app.listen(process.env.PORT || 8000, () => {
+    server.listen(process.env.PORT || 8000, () => {
       console.log("Service is running at port", process.env.PORT);
     });
   })

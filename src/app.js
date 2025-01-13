@@ -49,25 +49,44 @@ import LikesRouting from "./Routes/likes.router.js";
 app.use("/api/v1/likes", LikesRouting);
 
 //socket setuping for chatting
+import { SocketVerifyJwt } from "./Middlewares/socket.middleware.js";
+import { HandleChat } from "./controllers/chat.controller.js";
 import http from "http";
 import { Server } from "socket.io";
 const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: process.env.CORS_ORIGIN,
-    credentials: true,
+    // origin: process.env.CORS_ORIGIN,
+    // credentials: true,
+    origin: "*",  // In production, set this to your specific client origin
+    methods: ["GET", "POST"],
+    allowedHeaders: ["*"],
+    credentials: true
   },
+  transports: ["websocket"],
+  path: "/socket.io/"
 });
 
+io.use(SocketVerifyJwt);
 io.on("connection", (socket) => {
-  console.log("socket connection is connected");
+  console.log("Socket connected successfully! in server side", socket.id);
 
-  Chatting(socket, io);
+  HandleChat(socket, io);
 
-  socket.on("Disconnect", () => {
+  socket.on("disconnect", () => {
     console.log("Socket connection is disconnected");
   });
 });
 
-export default app;
+
+
+export {server};
+
+
+
+
+
+
+
+

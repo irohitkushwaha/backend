@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import cookie from "cookie";
-import ApiError from "../utils/ApiError";
+import ApiError from "../utils/ApiError.js";
 
 const SocketVerifyJwt = (socket, next) => {
   try {

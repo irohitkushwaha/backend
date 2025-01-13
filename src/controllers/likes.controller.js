@@ -80,10 +80,10 @@ const SaveLikeForComment = asyncHandler(async (req, res) => {
   const ExistLike = await Likes.findOne({
     Comment: COMMENTID._id,
     Owner: userid,
-  })
+  });
 
-  if(ExistLike){
-    throw new ApiError(400, "User has been already liked this comment")
+  if (ExistLike) {
+    throw new ApiError(400, "User has been already liked this comment");
   }
 
   const SaveLikeForComment = await Likes.create({
@@ -130,10 +130,10 @@ const SaveLikedOfTweet = asyncHandler(async (req, res) => {
   const ExistLike = await Likes.findOne({
     Tweet: TWEETID._id,
     Owner: userid,
-  })
+  });
 
-  if(ExistLike){
-    throw new ApiError(400, "user has been already liked this tweet")
+  if (ExistLike) {
+    throw new ApiError(400, "user has been already liked this tweet");
   }
 
   const SaveLikedOfTweet = await Likes.create({
@@ -156,7 +156,6 @@ const SaveLikedOfTweet = asyncHandler(async (req, res) => {
     );
 });
 
-//Algorithm for 
-
+//Algorithm for
 
 export { SaveLikeForComment, SaveLikedOfTweet, SaveLikeForVideo };
